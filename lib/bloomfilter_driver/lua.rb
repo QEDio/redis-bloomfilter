@@ -109,7 +109,12 @@ class Redis
         end
 
         def set(data, val)
-          @redis.evalsha(@add_fnc_sha, :keys => [@options[:key_name]], :argv => [@options[:size], @options[:error_rate], data, val])
+          arr_data = Array.try_convert(data) || [data]
+          @redis.pipelined do
+            arr_data.each do |d|
+              @redis.evalsha(@add_fnc_sha, :keys => [@options[:key_name]], :argv => [@options[:size], @options[:error_rate], d, val])
+            end
+          end
         end
     end
   end

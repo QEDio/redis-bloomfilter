@@ -58,6 +58,8 @@ describe Redis::Bloomfilter do
   end
 
   %w(ruby lua ruby-test).each do |driver|
+    let(:data_arr) {['abc', 'xyz', '123']}
+
     it 'should work' do
       bf = factory({:size => 1000, :error_rate => 0.01, :key_name => '__test_bf'},driver)
       bf.clear
@@ -66,6 +68,26 @@ describe Redis::Bloomfilter do
       bf.include?("asdlol").should be true
       bf.clear
       bf.include?("asdlol").should be false
+    end
+
+    it 'handles arrays as params' do
+      bf = factory({:size => 1000, :error_rate => 0.01, :key_name => '__test_bf'},driver)
+      bf.clear
+
+      data_arr.each do |el|
+        bf.include?(el).should be false
+      end
+
+      bf.insert data_arr
+      data_arr.each do |el|
+        puts "el: #{el}"
+        bf.include?(el).should be true
+      end
+
+      bf.clear
+      data_arr.each do |el|
+        bf.include?(el).should be false
+      end
     end
 
     it 'should honor the error rate' do

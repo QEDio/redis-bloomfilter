@@ -1,10 +1,9 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "redis-bloomfilter"
 
 Gem::Specification.new do |s|
   s.name        = "redis-bloomfilter"
-  s.version     = Redis::Bloomfilter::VERSION
+  s.version     = '0.0.2' #Redis::Bloomfilter::VERSION
   s.authors     = ["Francesco Laurita"]
   s.email       = ["francesco.laurita@gmail.com"]
   s.homepage    = "https://github.com/taganaka/redis-bloomfilter"

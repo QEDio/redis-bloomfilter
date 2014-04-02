@@ -63,8 +63,11 @@ class Redis
         end
 
         def set(data, val)
+          arr_data = Array.try_convert(data) || [data]
           @redis.pipelined do
-            indexes_for(data) { |i| @redis.setbit @options[:key_name], i, val }
+            arr_data.each do |d|
+              indexes_for(d) { |i| @redis.setbit @options[:key_name], i, val }
+            end
           end
         end
     end
