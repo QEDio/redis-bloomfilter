@@ -23,6 +23,9 @@ class Redis
       end
 
       # It checks if a key is part of the set
+      # returns all elements that are not found via the bloomfilter lookup method
+      # returns false if only one element is provided and it's not found
+      # returns true if only one element is provided and it's found
       def include?(key)
         arr_key = Array.try_convert(key) || [key]
         hsh_key = {}
@@ -43,6 +46,7 @@ class Redis
         @redis.pipelined do
           hsh_key.each_pair do |k,v|
             # filter all that are 0
+            # 0 means this element is not within the bloomfilter, no need for further lookup
             next if v[:future][0].value == 0
             v[:indexes].each_with_index do |idx, i|
               v[:future][i+1] = @redis.getbit(@options[:key_name], idx)
@@ -50,21 +54,21 @@ class Redis
           end
         end
 
-        filtered_arr = []
+        not_in_filter = []
         hsh_key.each_pair do |k,v|
-          puts "future: #{v[:future].map{|f|f.value}}"
-          filtered_arr << k unless v[:future].map{|f|f.value}.include?(0)
+          # if we have a zero in our result array we (most likely) havent seen this value yet
+          not_in_filter << k if v[:future].map{|f|f.value}.include?(0)
         end
 
         if arr_key.length == 1
-          if filtered_arr.length == 0
+          if not_in_filter.length == 1
             return false
           else
             return true
           end
         end
 
-        return filtered_arr
+        return not_in_filter
       end
 
       # It deletes a bloomfilter
