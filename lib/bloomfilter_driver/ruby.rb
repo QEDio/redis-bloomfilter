@@ -17,16 +17,46 @@ class Redis
 
       # It checks if a key is part of the set
       def include?(key)
+        arr_key = Array.try_convert(key) || [key]
+        hsh_key = {}
 
-        indexes = []
-        indexes_for(key).each { |idx| indexes << idx }
-        return false if @redis.getbit(@options[:key_name], indexes.shift) == 0
-
-        result = @redis.pipelined do
-          indexes.each {|idx| @redis.getbit(@options[:key_name], idx)}
+        arr_key.each do |k|
+          hsh_key[k] = {key: k, future: [], indexes: indexes_for(k) }
         end
 
-        !result.include?(0)
+        # if the first bit returned from redis is 0 we don't look at this any further?
+        @redis.pipelined do
+          hsh_key.each_pair do |k,v|
+            v[:future][0] = @redis.getbit(@options[:key_name], v[:indexes].shift)
+          end
+        end
+
+        @redis.pipelined do
+          hsh_key.each_pair do |k,v|
+            # filter all that are 0
+            next if v[:future][0].value == 0
+            v[:indexes].each_with_index do |idx, i|
+              puts "i: #{i}"
+              v[:future][i+1] = @redis.getbit(@options[:key_name], idx)
+            end
+          end
+        end
+
+        filtered_arr = []
+        hsh_key.each_pair do |k,v|
+          puts "future: #{v[:future].map{|f|f.value}}"
+          filtered_arr << k unless v[:future].map{|f|f.value}.include?(0)
+        end
+
+        if arr_key.length == 1
+          if filtered_arr.length == 0
+            return false
+          else
+            return true
+          end
+        end
+
+        return filtered_arr
       end
 
       # It removes an element from the filter

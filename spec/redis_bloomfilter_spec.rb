@@ -57,7 +57,8 @@ describe Redis::Bloomfilter do
     bf.clear
   end
 
-  %w(ruby lua ruby-test).each do |driver|
+  #%w(ruby lua ruby-test).each do |driver|
+  %w(ruby ruby-test).each do |driver|
     let(:data_arr) {['abc', 'xyz', '123']}
 
     it 'should work' do
