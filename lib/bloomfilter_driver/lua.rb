@@ -25,8 +25,8 @@ class Redis
       end
 
       def include?(key)
-        #raise 'Arrays are currently not supported with lua' if Array.try_convert(key)
-        arr_key = Array.try_convert(key) || [key]
+        is_array = Array.try_convert(key) ? true : false
+        arr_key = is_array ? key : [key]
         hsh_key = {}
 
         arr_key.each do |k|
@@ -46,7 +46,8 @@ class Redis
           in_filter << k if v[:future].value == 1
         end
 
-        if arr_key.length == 1
+        # handle single element case
+        unless is_array
           if in_filter.length == 1
             return true
           else

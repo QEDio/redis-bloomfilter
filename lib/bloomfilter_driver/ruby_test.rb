@@ -27,7 +27,8 @@ class Redis
       # returns false if only one element is provided and it's not found
       # returns true if only one element is provided and it's found
       def include?(key)
-        arr_key = Array.try_convert(key) || [key]
+        is_array = Array.try_convert(key) ? true : false
+        arr_key = is_array ? key : [key]
         hsh_key = {}
 
         arr_key.each do |k|
@@ -61,7 +62,7 @@ class Redis
           in_filter << k unless v[:future].map{|f|f.value}.include?(0)
         end
 
-        if arr_key.length == 1
+        unless is_array
           if in_filter.length == 1
             return true
           else
