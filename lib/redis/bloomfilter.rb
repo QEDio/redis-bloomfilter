@@ -24,12 +24,8 @@ class Redis
 
       raise ArgumentError, "options[:size] && options[:error_rate] cannot be nil" if options[:error_rate].nil? || options[:size].nil?
 
-      #Size provided, compute hashes and bits
-
-      @options[:size]       = options[:size]
-      @options[:error_rate] = options[:error_rate] ? options[:error_rate] : @options[:error_rate]
-      @options[:bits]       = Bloomfilter.optimal_m options[:size], @options[:error_rate]
-      @options[:hashes]     = Bloomfilter.optimal_k options[:size], @options[:bits]
+      @options[:bits]       = Bloomfilter.optimal_m(options[:size], @options[:error_rate])
+      @options[:hashes]     = Bloomfilter.optimal_k(options[:size], @options[:bits])
 
       @redis = @options[:redis] || Redis.current
       @options[:hash_engine] = options[:hash_engine] if options[:hash_engine]
@@ -84,6 +80,5 @@ class Redis
       def driver_name
         @options[:driver].downcase.split('-').collect{|t| t.gsub(/(\w+)/){|s|s.capitalize}}.join
       end
-
   end
 end

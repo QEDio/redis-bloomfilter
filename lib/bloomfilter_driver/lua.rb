@@ -25,8 +25,36 @@ class Redis
       end
 
       def include?(key)
-        r = @redis.evalsha(@check_fnc_sha, :keys => [@options[:key_name]], :argv => [@options[:size], @options[:error_rate], key])
-        r == 1 ? true : false
+        #raise 'Arrays are currently not supported with lua' if Array.try_convert(key)
+        arr_key = Array.try_convert(key) || [key]
+        hsh_key = {}
+
+        arr_key.each do |k|
+          hsh_key[k] = {key: k, future: 0}
+        end
+
+        @redis.pipelined do
+          hsh_key.each_pair do |k,v|
+            v[:future] = @redis.evalsha(@check_fnc_sha, :keys => [@options[:key_name]], :argv => [@options[:size], @options[:error_rate], k])
+          end
+        end
+
+        in_filter = []
+        hsh_key.each_pair do |k,v|
+          # if we have a zero in our result array we (most likely) havent seen this value yet
+          # if we don't have a zero in our result array we (most likely) have seen this value already
+          in_filter << k if v[:future].value == 1
+        end
+
+        if arr_key.length == 1
+          if in_filter.length == 1
+            return true
+          else
+            return false
+          end
+        end
+
+        return in_filter
       end
 
       def clear

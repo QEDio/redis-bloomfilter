@@ -54,21 +54,22 @@ class Redis
           end
         end
 
-        not_in_filter = []
+        in_filter = []
         hsh_key.each_pair do |k,v|
           # if we have a zero in our result array we (most likely) havent seen this value yet
-          not_in_filter << k if v[:future].map{|f|f.value}.include?(0)
+          # if we don't have a zero in our result array we (most likely) have seen this value already
+          in_filter << k unless v[:future].map{|f|f.value}.include?(0)
         end
 
         if arr_key.length == 1
-          if not_in_filter.length == 1
-            return false
-          else
+          if in_filter.length == 1
             return true
+          else
+            return false
           end
         end
 
-        return not_in_filter
+        return in_filter
       end
 
       # It deletes a bloomfilter
